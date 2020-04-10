@@ -557,6 +557,38 @@ static NSDictionary* googlePlist;
     }
 }
 
+- (void)signInUserWithCustomToken:(CDVInvokedUrlCommand*)command {
+    @try {
+        NSString* customToken = [command.arguments objectAtIndex:0];
+        [[FIRAuth auth] signInWithCustomToken:customToken
+                                 completion:^(FIRAuthDataResult * _Nullable authResult,
+                                              NSError * _Nullable error) {
+          @try {
+              [self handleAuthResult:authResult error:error command:command];
+          }@catch (NSException *exception) {
+              [self handlePluginExceptionWithContext:exception :command];
+          }
+        }];
+    }@catch (NSException *exception) {
+        [self handlePluginExceptionWithContext:exception :command];
+    }
+}
+
+- (void)signInUserAnonymously:(CDVInvokedUrlCommand*)command {
+    @try {
+        [[FIRAuth auth] signInAnonymouslyWithCompletion:^(FIRAuthDataResult * _Nullable authResult,
+                                              NSError * _Nullable error) {
+          @try {
+              [self handleAuthResult:authResult error:error command:command];
+          }@catch (NSException *exception) {
+              [self handlePluginExceptionWithContext:exception :command];
+          }
+        }];
+    }@catch (NSException *exception) {
+        [self handlePluginExceptionWithContext:exception :command];
+    }
+}
+
 - (void)authenticateUserWithGoogle:(CDVInvokedUrlCommand*)command{
     @try {
         self.googleSignInCallbackId = command.callbackId;
@@ -692,6 +724,7 @@ static NSDictionary* googlePlist;
         [userInfo setValue:user.photoURL ? user.photoURL.absoluteString : nil forKey:@"photoUrl"];
         [userInfo setValue:user.uid forKey:@"uid"];
         [userInfo setValue:user.providerID forKey:@"providerId"];
+        [userInfo setValue:@(user.isAnonymous ? true : false) forKey:@"isAnonymous"];
         [user getIDTokenWithCompletion:^(NSString * _Nullable token, NSError * _Nullable error) {
             [userInfo setValue:token forKey:@"idToken"];
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:userInfo] callbackId:command.callbackId];
@@ -1180,6 +1213,37 @@ static NSDictionary* googlePlist;
             FIRRemoteConfig* remoteConfig = [FIRRemoteConfig remoteConfig];
             NSString* value = remoteConfig[key].stringValue;
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:value];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        }@catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
+- (void)getInfo:(CDVInvokedUrlCommand *)command {
+    [self.commandDelegate runInBackground:^{
+        @try {
+            FIRRemoteConfig* remoteConfig = [FIRRemoteConfig remoteConfig];
+            NSInteger minimumFetchInterval = remoteConfig.configSettings.minimumFetchInterval;
+            NSInteger fetchTimeout = remoteConfig.configSettings.fetchTimeout;
+            NSDate* lastFetchTime = remoteConfig.lastFetchTime;
+            FIRRemoteConfigFetchStatus lastFetchStatus = remoteConfig.lastFetchStatus;
+            // isDeveloperModeEnabled is deprecated new recommnded way to check is minimumFetchInterval == 0
+            BOOL isDeveloperModeEnabled = minimumFetchInterval == 0 ? true : false;
+
+            NSDictionary* configSettings = @{
+                @"developerModeEnabled": [NSNumber numberWithBool:isDeveloperModeEnabled],
+                @"minimumFetchInterval": [NSNumber numberWithInteger:minimumFetchInterval],
+                @"fetchTimeout": [NSNumber numberWithInteger:fetchTimeout],
+            };
+
+            NSDictionary* infoObject = @{
+                @"configSettings": configSettings,
+                @"fetchTimeMillis": (lastFetchTime ? [NSNumber numberWithInteger:(lastFetchTime.timeIntervalSince1970 * 1000)] : [NSNull null]),
+                @"lastFetchStatus": [NSNumber numberWithInteger:(lastFetchStatus)],
+            };
+
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:infoObject];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }@catch (NSException *exception) {
             [self handlePluginExceptionWithContext:exception :command];

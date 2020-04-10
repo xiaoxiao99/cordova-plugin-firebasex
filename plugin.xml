@@ -72,12 +72,14 @@
 		<preference name="ANDROID_CRASHLYTICS_NDK_VERSION" default="2.1.1" />
 		<preference name="ANDROID_GSON_VERSION" default="2.8.6" />
 
+		<framework src="com.google.android.gms:play-services-tagmanager:$ANDROID_PLAY_SERVICES_TAGMANAGER_VERSION" />
 		<framework src="com.google.android.gms:play-services-auth:$ANDROID_PLAY_SERVICES_AUTH_VERSION" />
 		<framework src="com.google.firebase:firebase-analytics:$ANDROID_FIREBASE_ANALYTICS_VERSION" />
 		<framework src="com.google.firebase:firebase-messaging:$ANDROID_FIREBASE_MESSAGING_VERSION" />
 		<framework src="com.google.firebase:firebase-config:$ANDROID_FIREBASE_CONFIG_VERSION" />
 		<framework src="com.google.firebase:firebase-perf:$ANDROID_FIREBASE_PERF_VERSION" />
 		<framework src="com.google.firebase:firebase-auth:$ANDROID_FIREBASE_AUTH_VERSION" />
+		<framework src="com.google.firebase:firebase-inappmessaging-display:$ANDROID_FIREBASE_INAPPMESSAGING_VERSION" />
 		<framework src="com.google.firebase:firebase-firestore:$ANDROID_FIREBASE_FIRESTORE_VERSION" />
 		<framework src="com.crashlytics.sdk.android:crashlytics:$ANDROID_CRASHLYTICS_VERSION" />
 		<framework src="com.crashlytics.sdk.android:crashlytics-ndk:$ANDROID_CRASHLYTICS_NDK_VERSION" />
@@ -132,10 +134,12 @@
 				<pod name="Firebase/Messaging" spec="6.18.0"/>
 				<pod name="Firebase/Performance" spec="6.18.0"/>
 				<pod name="Firebase/RemoteConfig" spec="6.18.0"/>
+				<pod name="Firebase/InAppMessaging" spec="6.18.0"/>
 				<pod name="Firebase/Firestore" spec="6.18.0"/>
 				<pod name="Fabric" spec="1.10.2"/>
 				<pod name="Crashlytics" spec="3.14.0"/>
 				<pod name="GoogleSignIn" spec="5.0.2"/>
+				<pod name="GoogleTagManager" spec="7.1.2"/>
 			</pods>
 		</podspec>
 

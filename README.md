@@ -140,6 +140,8 @@ To help ensure this plugin is kept updated, new features are added and bugfixes 
     - [deleteUser](#deleteuser)
     - [createUserWithEmailAndPassword](#createuserwithemailandpassword)
     - [signInUserWithEmailAndPassword](#signinuserwithemailandpassword)
+    - [signInUserWithCustomToken](#signinuserwithcustomtoken)
+    - [signInUserAnonymously](#signinuseranonymously)
     - [verifyPhoneNumber](#verifyphonenumber)
       - [Android](#android-2)
       - [iOS](#ios-2)
@@ -1575,6 +1577,30 @@ Example FCM v1 API notification message payload for invoking the above example c
 
 ```
 
+If your Android app plays multiple sounds or effects, it's a good idea to create a channel for each likely combination. This is because once a channel is created you cannot override sounds/effects.
+IE, expanding on the createChannel example:
+```javascript
+let soundList = ["train","woop","clock","radar","sonar"];
+for (let key of soundList) {
+    let name = "yourchannelprefix_" + key;
+    channel.id = name;
+    channel.sound = key;
+    channel.name = "Your description " + key;
+
+    // Create the channel
+    window.FirebasePlugin.createChannel(channel,
+        function(){
+            console.log('Notification Channel created: ' + channel.id + " " + JSON.stringify(channel));
+        },
+        function(error){
+            console.log('Create notification channel error: ' + error);
+        });
+}
+```
+
+Note, if you just have one sound / effect combination that the user can customise, just use setDefaultChannel when any changes are made.
+
+
 ### setDefaultChannel
 Android 8+ only.
 Overrides the properties for the default channel.
@@ -2128,6 +2154,43 @@ Example usage:
     });
 ```
 
+### signInUserWithCustomToken
+Signs in user with custom token.
+
+**Parameters**:
+- {string} customToken - the custom token 
+- {function} success - callback function to call on success
+- {function} error - callback function which will be passed a {string} error message as an argument
+
+Example usage:
+
+```javascript
+    FirebasePlugin.signInUserWithCustomToken(customToken, function() {
+        console.log("Successfully signed in");
+        // User is now signed in
+    }, function(error) {
+        console.error("Failed to sign in", error);
+    });
+```
+
+### signInUserAnonymously
+Signs in user anonymously.
+
+**Parameters**:
+- {function} success - callback function to call on success
+- {function} error - callback function which will be passed a {string} error message as an argument
+
+Example usage:
+
+```javascript
+    FirebasePlugin.signInUserAnonymously(function() {
+        console.log("Successfully signed in");
+        // User is now signed in
+    }, function(error) {
+        console.error("Failed to sign in", error);
+    });
+```
+
 ### verifyPhoneNumber
 Requests verification of a phone number.
 The resulting credential can be used to create/sign in to a phone number-based user account in your app or to link the phone number to an existing user account
@@ -2466,7 +2529,6 @@ FirebasePlugin.getByteArray("key", function(bytes) {
 ```
 
 ### getInfo
-Android only.
 Get the current state of the FirebaseRemoteConfig singleton object:
 
 **Parameters**:
@@ -2477,6 +2539,10 @@ Get the current state of the FirebaseRemoteConfig singleton object:
 FirebasePlugin.getInfo(function(info) {
     // the status of the developer mode setting (true/false)
     console.log(info.configSettings.developerModeEnabled);
+    // (iOS only) for how much (secs) fetch cache is valid and data will not be refetched
+    console.log(info.configSettings.minimumFetchInterval);
+    // (iOS only) value in seconds to abandon a pending fetch request made to the backend
+    console.log(info.configSettings.fetchTimeout);
     // the timestamp (milliseconds since epoch) of the last successful fetch
     console.log(info.fetchTimeMillis);
     // the status of the most recent fetch attempt (int)
