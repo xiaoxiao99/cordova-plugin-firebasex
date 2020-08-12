@@ -1,3 +1,16 @@
+* (iOS) Add support for iOS actionable notifications
+    * Merged from PR [#482](https://github.com/dpa99c/cordova-plugin-firebasex/pull/482).
+* (Android): Handle task outcomes where task is not successful but exception is null.
+    * Resolves [#473](https://github.com/dpa99c/cordova-plugin-firebasex/issues/473).
+* (iOS): Bump minimum required Cocoapods version to v1.9.1 due to requirement by Firestore v6.28.1
+* (Android) (Bug fix) Fix all cases where task outcomes are being incorrectly handled.
+* (iOS) Update remote config to use `activateWithCompletion` instead of deprecated `activateWithCompletionHandler` for activating remote config.
+* (iOS) (Bug fix) Use regex to extract cocoapods from stdout when verifying cocoapods version during plugin install.
+    * Resolves [#462](https://github.com/dpa99c/cordova-plugin-firebasex/issues/462).
+* (Android, iOS): Support custom locations for Firebase config files
+    * Merged from PR [#465](https://github.com/dpa99c/cordova-plugin-firebasex/pull/465).
+    * Resolves [#452](https://github.com/dpa99c/cordova-plugin-firebasex/issues/452).
+
 # Version 10.1.2-cli
 * (iOS): Bump Firebase SDK versions to v6.28.1 to resolve build freeze issue.
     * Resolves [#460](https://github.com/dpa99c/cordova-plugin-firebasex/issues/460).

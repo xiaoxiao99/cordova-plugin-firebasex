@@ -68,20 +68,56 @@ static NSDictionary* googlePlist;
         if([self getGooglePlistFlagWithDefaultValue:FIREBASE_ANALYTICS_COLLECTION_ENABLED defaultValue:YES]){
             [self setPreferenceFlag:FIREBASE_ANALYTICS_COLLECTION_ENABLED flag:YES];
         }
-        
+
         if([self getGooglePlistFlagWithDefaultValue:FIREBASE_PERFORMANCE_COLLECTION_ENABLED defaultValue:YES]){
             [self setPreferenceFlag:FIREBASE_PERFORMANCE_COLLECTION_ENABLED flag:YES];
         }
         
+        // Set actionable categories if pn-actions.json exist in bundle
+        [self setActionableNotifications];
+
         // Check for permission and register for remote notifications if granted
         [self _hasPermission:^(BOOL result) {}];
-        
+
         [GIDSignIn sharedInstance].presentingViewController = self.viewController;
-        
+
         authCredentials = [[NSMutableDictionary alloc] init];
     }@catch (NSException *exception) {
         [self handlePluginExceptionWithoutContext:exception];
     }
+}
+
+
+// Dynamic actions from pn-actions.json
+- (void)setActionableNotifications {
+    
+    // Parse JSON
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"pn-actions" ofType:@"json"];
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:nil];
+
+    // Assign actions for categories
+    NSMutableSet *categories = [[NSMutableSet alloc] init];
+    NSArray *actionsArray = [dict objectForKey:@"PushNotificationActions"];
+    for (NSDictionary *item in actionsArray) {
+        NSMutableArray *buttons = [NSMutableArray new];
+        NSString *category = [item objectForKey:@"category"];
+        
+        NSArray *actions = [item objectForKey:@"actions"];
+        for (NSDictionary *action in actions) {
+            NSString *actionId = [action objectForKey:@"id"];
+            NSString *actionTitle = [action objectForKey:@"title"];
+        
+            [buttons addObject:[UNNotificationAction actionWithIdentifier:actionId
+                title:NSLocalizedString(actionTitle, nil) options:UNNotificationActionOptionNone]];
+        }
+        
+        [categories addObject:[UNNotificationCategory categoryWithIdentifier:category
+                    actions:buttons intentIdentifiers:@[] options:UNNotificationCategoryOptionNone]];
+    }
+    
+    // Initialize categories
+    [[UNUserNotificationCenter currentNotificationCenter] setNotificationCategories:categories];
 }
 
 // @override abstract
@@ -188,7 +224,7 @@ static NSDictionary* googlePlist;
     if (dataLength == 0) {
         return nil;
     }
-      
+
     const unsigned char *dataBuffer = data.bytes;
     NSMutableString *hexString  = [NSMutableString stringWithCapacity:(dataLength * 2)];
     for (int i = 0; i < dataLength; ++i) {
@@ -268,7 +304,7 @@ static NSDictionary* googlePlist;
 - (void)registerForRemoteNotifications {
     NSLog(@"registerForRemoteNotifications");
     if(registeredForRemoteNotifications) return;
-    
+
     [self runOnMainThread:^{
         @try {
             [[UIApplication sharedApplication] registerForRemoteNotifications];
@@ -300,7 +336,7 @@ static NSDictionary* googlePlist;
     [self runOnMainThread:^{
         @try {
             long badge = [[UIApplication sharedApplication] applicationIconBadgeNumber];
-            
+
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:badge];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }@catch (NSException *exception) {
@@ -454,7 +490,7 @@ static NSDictionary* googlePlist;
         @try {
             [[UIApplication sharedApplication] setApplicationIconBadgeNumber:1];
             [[UIApplication sharedApplication] setApplicationIconBadgeNumber:0];
-            
+
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }@catch (NSException *exception) {
@@ -571,7 +607,7 @@ static NSDictionary* googlePlist;
     @try {
         self.googleSignInCallbackId = command.callbackId;
         [[GIDSignIn sharedInstance] signIn];
-        
+
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
         [pluginResult setKeepCallbackAsBool:YES];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -586,13 +622,13 @@ static NSDictionary* googlePlist;
         if (@available(iOS 13.0, *)) {
             self.appleSignInCallbackId = command.callbackId;
             [self startSignInWithAppleFlow];
-            
+
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
             [pluginResult setKeepCallbackAsBool:YES];
         } else {
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"OS version is too low - Apple Sign In requires iOS 13.0+"];
         }
-        
+
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }@catch (NSException *exception) {
         [self handlePluginExceptionWithContext:exception :command];
@@ -603,7 +639,7 @@ static NSDictionary* googlePlist;
     @try {
         FIRAuthCredential* credential = [self obtainAuthCredential:[command.arguments objectAtIndex:0] command:command];
         if(credential == nil) return;
-        
+
         [[FIRAuth auth] signInWithCredential:credential
                                   completion:^(FIRAuthDataResult * _Nullable authResult,
                                                NSError * _Nullable error) {
@@ -621,10 +657,10 @@ static NSDictionary* googlePlist;
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No user is currently signed"] callbackId:command.callbackId];
             return;
         }
-        
+
         FIRAuthCredential* credential = [self obtainAuthCredential:[command.arguments objectAtIndex:0] command:command];
         if(credential == nil) return;
-        
+
         [user reauthenticateWithCredential:credential completion:^(FIRAuthDataResult * _Nullable authResult, NSError * _Nullable error) {
             [self handleAuthResult:authResult error:error command:command];
         }];
@@ -637,13 +673,13 @@ static NSDictionary* googlePlist;
     @try {
         FIRAuthCredential* credential = [self obtainAuthCredential:[command.arguments objectAtIndex:0] command:command];
         if(credential == nil) return;
-        
+
         [[FIRAuth auth].currentUser linkWithCredential:credential
                                   completion:^(FIRAuthDataResult * _Nullable authResult,
                                                NSError * _Nullable error) {
             [self handleAuthResult:authResult error:error command:command];
         }];
-        
+
     }@catch (NSException *exception) {
         [self handlePluginExceptionWithContext:exception :command];
     }
@@ -653,7 +689,7 @@ static NSDictionary* googlePlist;
     @try {
         bool isSignedIn = [FIRAuth auth].currentUser ? true : false;
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:isSignedIn] callbackId:command.callbackId];
-        
+
     }@catch (NSException *exception) {
         [self handlePluginExceptionWithContext:exception :command];
     }
@@ -666,12 +702,12 @@ static NSDictionary* googlePlist;
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No user is currently signed"] callbackId:command.callbackId];
             return;
         }
-        
+
         // Sign out of Google
         if([[GIDSignIn sharedInstance] currentUser] != nil){
             [[GIDSignIn sharedInstance] signOut];
         }
-        
+
         // Sign out of Firebase
         NSError *signOutError;
         BOOL status = [[FIRAuth auth] signOut:&signOutError];
@@ -686,7 +722,7 @@ static NSDictionary* googlePlist;
 }
 
 - (void)getCurrentUser:(CDVInvokedUrlCommand *)command {
-    
+
     @try {
         FIRUser* user = [FIRAuth auth].currentUser;
         if(!user){
@@ -694,14 +730,14 @@ static NSDictionary* googlePlist;
             return;
         }
         [self extractAndReturnUserInfo:command];
-        
+
     }@catch (NSException *exception) {
         [self handlePluginExceptionWithContext:exception :command];
     }
 }
 
 - (void)reloadCurrentUser:(CDVInvokedUrlCommand *)command {
-    
+
     @try {
         FIRUser* user = [FIRAuth auth].currentUser;
         if(!user){
@@ -746,9 +782,9 @@ static NSDictionary* googlePlist;
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No user is currently signed"] callbackId:command.callbackId];
             return;
         }
-        
+
         NSDictionary* profile = [command.arguments objectAtIndex:0];
-        
+
         FIRUserProfileChangeRequest* changeRequest = [user profileChangeRequest];
         if([profile objectForKey:@"name"] != nil){
             changeRequest.displayName = [profile objectForKey:@"name"];
@@ -1614,17 +1650,17 @@ static NSDictionary* googlePlist;
 
 - (FIRAuthCredential*)obtainAuthCredential:(NSDictionary*)credential command:(CDVInvokedUrlCommand *)command {
     FIRAuthCredential* authCredential = nil;
-    
+
     if(credential == nil){
         NSString* errMsg = @"credential object must be passed as first and only argument";
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errMsg] callbackId:command.callbackId];
         return authCredential;
     }
-    
+
     NSString* key = [credential objectForKey:@"id"];
     NSString* verificationId = [credential objectForKey:@"verificationId"];
     NSString* code = [credential objectForKey:@"code"];
-    
+
     if(key != nil){
         authCredential = [authCredentials objectForKey:key];
         if(authCredential == nil){

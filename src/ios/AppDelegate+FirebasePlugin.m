@@ -394,9 +394,14 @@ didDisconnectWithUser:(GIDGoogleUser *)user
          withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler {
     
     @try{
-        [self.delegate userNotificationCenter:center
-                  willPresentNotification:notification
-                    withCompletionHandler:completionHandler];
+        if(center == nil){
+            center = [UNUserNotificationCenter currentNotificationCenter];
+        }
+        if(center != nil){
+            [self.delegate userNotificationCenter:center
+            willPresentNotification:notification
+              withCompletionHandler:completionHandler];
+        }
 
         if (![notification.request.trigger isKindOfClass:UNPushNotificationTrigger.class] && ![notification.request.trigger isKindOfClass:UNTimeIntervalNotificationTrigger.class]){
             [FirebasePlugin.firebasePlugin _logError:@"willPresentNotification: aborting as not a supported UNNotificationTrigger"];
@@ -465,10 +470,15 @@ didDisconnectWithUser:(GIDGoogleUser *)user
           withCompletionHandler:(void (^)(void))completionHandler
 {
     @try{
-        [self.delegate userNotificationCenter:center
-           didReceiveNotificationResponse:response
-                    withCompletionHandler:completionHandler];
-
+        if(center == nil){
+            center = [UNUserNotificationCenter currentNotificationCenter];
+        }
+        if(center != nil){
+            [self.delegate userNotificationCenter:center
+            didReceiveNotificationResponse:response
+                     withCompletionHandler:completionHandler];
+        }
+        
         if (![response.notification.request.trigger isKindOfClass:UNPushNotificationTrigger.class] && ![response.notification.request.trigger isKindOfClass:UNTimeIntervalNotificationTrigger.class]){
             [FirebasePlugin.firebasePlugin _logMessage:@"didReceiveNotificationResponse: aborting as not a supported UNNotificationTrigger"];
             return;
@@ -490,7 +500,11 @@ didDisconnectWithUser:(GIDGoogleUser *)user
             [mutableUserInfo setValue:@"notification" forKey:@"messageType"];
         }
         
-
+        // Dynamic Actions
+        if (response.actionIdentifier && ![response.actionIdentifier isEqual:UNNotificationDefaultActionIdentifier]) {
+            [mutableUserInfo setValue:response.actionIdentifier forKey:@"action"];
+        }
+        
         // Print full message.
         [FirebasePlugin.firebasePlugin _logInfo:[NSString stringWithFormat:@"didReceiveNotificationResponse: %@", mutableUserInfo]];
 

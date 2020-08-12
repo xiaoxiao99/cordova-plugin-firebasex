@@ -639,7 +639,6 @@ public class FirebasePlugin extends CordovaPlugin {
             public void run() {
                 try {
                     handleTaskOutcome(FirebaseMessaging.getInstance().unsubscribeFromTopic(topic), callbackContext);
-                    callbackContext.success();
                 } catch (Exception e) {
                     handleExceptionWithContext(e, callbackContext);
                 }
@@ -2297,13 +2296,22 @@ public class FirebasePlugin extends CordovaPlugin {
 
     private void handleTaskOutcome(@NonNull Task<Void> task, CallbackContext callbackContext) {
         try {
-            if (task.isSuccessful()) {
-                callbackContext.success();
-            }else if(task.getException() != null){
-                callbackContext.error(task.getException().getMessage());
-            }else{
-                callbackContext.error("Task failed for unknown reason");
-            }
+            task.addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    try {
+                        if (task.isSuccessful() || task.getException() == null) {
+                            callbackContext.success();
+                        }else if(task.getException() != null){
+                            callbackContext.error(task.getException().getMessage());
+                        }else{
+                            callbackContext.error("Task failed for unknown reason");
+                        }
+                    } catch (Exception e) {
+                        handleExceptionWithContext(e, callbackContext);
+                    }
+                };
+            });
         } catch (Exception e) {
             handleExceptionWithContext(e, callbackContext);
         }
@@ -2311,7 +2319,7 @@ public class FirebasePlugin extends CordovaPlugin {
 
     private void handleAuthTaskOutcome(@NonNull Task<AuthResult> task, CallbackContext callbackContext) {
         try {
-            if (task.isSuccessful()) {
+            if (task.isSuccessful() || task.getException() == null) {
                 callbackContext.success();
             }else{
                 String errMessage = task.getException().getMessage();
