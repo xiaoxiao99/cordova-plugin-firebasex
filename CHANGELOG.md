@@ -1,3 +1,4 @@
+# Version 11.0.2-cli
 * (iOS) Check if file contents for `pn-actions.json` exists before attempting to use it.
     * Resolves [#512](https://github.com/dpa99c/cordova-plugin-firebasex/issues/512).
     * Bug introduced by PR [#482](https://github.com/dpa99c/cordova-plugin-firebasex/pull/482).
@@ -5,6 +6,11 @@
     * Resolves [#520](https://github.com/dpa99c/cordova-plugin-firebasex/issues/520).
 * (Feature): Add setLanguageCode method for Firebase Auth
     * Merged from PR [#527](https://github.com/dpa99c/cordova-plugin-firebasex/pull/527).
+* (iOS): Bump podspec versions for Firebase iOS SDK to v6.33.0.
+    * Resolves [#530](https://github.com/dpa99c/cordova-plugin-firebasex/issues/530).
+* (Android): Bump pinned Firebase SDK dependencies to latest release versions.
+* (Types) Export interfaces in types definition.
+    * Resolves [#529](https://github.com/dpa99c/cordova-plugin-firebasex/issues/529).
 
 # Version 11.0.1-cli
 * (iOS) Set the Sign In with Apple capability based on the `IOS_ENABLE_APPLE_SIGNIN` plugin variable.
